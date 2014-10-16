@@ -31,16 +31,6 @@ get.get.basic.isoNo <- function( chemicalCompound ) lapply(
 )
 
 
-# get.is.assymptotic.nuissance <- function( chemicalCompound ){
-	
-# 	aC 	<- as.integer(unlist(chemicalCompound))
-	
-# 	return(list(
-# 		multi 	= function( configuration, ... ) 	configuration <= aC,
-# 		binom 	= function( configuration, ... ) 	configuration <= aC[4:5] 
-# 	))
-# } 
-
 get.multi.is.assymptotic.nuissance <- function( chemicalCompound ){
 	
 	aC 	<<- as.integer(unlist(chemicalCompound))
@@ -251,25 +241,6 @@ get.real.log.pdf 	<- function( chemicalCompound ) {
 
 	return( real.log.pdf )
 }   
-
-get.proxy.log.pdfs <- function( intensities ) 	list(
-	multi 	= function( x ) dmultinom( 
-		x 		= x, 
-		prob 	= intensities$multi, 
-		log 	= TRUE
-	),
-	binom 	= function( y ) dbinom(
-		x 		= y[1],
-		size 	= sum( y ),
-		prob 	= intensities$binom[1],
-		log 	= TRUE
-	) 
-)
-
-get.log.pdfs 	<- function( chemicalCompound, intensities ) c(
-	real 	= get.real.log.pdf( chemicalCompound ),
-	get.proxy.log.pdfs( intensities )
-)
 
 ######################################################################
 

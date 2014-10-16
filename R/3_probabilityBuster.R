@@ -1,7 +1,28 @@
 require('hash')
 
 get.probabilityBuster <- function( 
+	chemicalCompound,
+	intensities,
+	M 	= .99,
+	B 	= .99
 ){
+	force(M)
+	force(B)
+
+	aC 			<- as.integer( unlist( chemicalCompound) )
+
+	multi.pdf 	<- function( x ) dmultinom( 
+		x 		= x, 
+		prob 	= intensities$multi, 
+		log 	= TRUE
+	)
+
+	binom.pdf 	<- function( y ) dbinom(
+		x 		= y[1],
+		size 	= sum( y ),
+		prob 	= intensities$binom[1],
+		log 	= TRUE
+	)
 
 	ProbabilityBuster 	<- setRefClass(
 		Class 	= "ProbabilityBuster",
@@ -12,16 +33,16 @@ get.probabilityBuster <- function(
 			storage 		= "hash",
 			bfs.storage 	= "MatrixPriorityQueue",
 			sum.prob 		= "numeric",
-			directions 		= "matrix",
-			aC 				= "integer"
+			directions 		= 'matrix',
+			aC 				= 'integer'
 		),
 
 		methods = list(
 
 			initialize 		= function( 
 				maxNo, 
-				percent 			= .99, 
-				chemicalCompound 	= NULL, 
+				aC,  
+				percent 	= .99,
 				...
 			){
 				if( !is.null(chemicalCompound) ){
@@ -30,6 +51,8 @@ get.probabilityBuster <- function(
 
 					percent 	<<- percent
 					storage 	<<- hash()
+
+					aC 	<<- aC
 
 					Mode 		<- 	get.mode( maxNo )
 					logProb 	<- 	log.pdf( Mode ) 
@@ -43,8 +66,6 @@ get.probabilityBuster <- function(
 
 						# Adding initial node to hash table.
 					storage[ c2char( Mode ) ]<<- logProb
-
-					aC 			<<- as.integer( unlist( chemicalCompound) )
 
 					return(.self)
 				}
@@ -169,7 +190,6 @@ get.probabilityBuster <- function(
 						get.more.configurations()				
 				})
 
-				# print( timing )
 
 				localStorage 	<- as.list( storage )
 				localStorage 	<- cbind(
@@ -197,15 +217,12 @@ get.probabilityBuster <- function(
 
 			initialize 	= function( 
 				maxNo, 
+				aC,
 				percent 	= .99,
-				chemicalCompound = NULL,
 				... 
 			){
-				if( !is.null(chemicalCompound) ){
-					callSuper( maxNo, percent, chemicalCompound, ... )
-
-					directions 	<<- Directions$multi
-				}	
+				callSuper( maxNo, aC, percent, ... )
+				directions 	<<- Directions$multi		
 			},
 
 
@@ -250,19 +267,19 @@ get.probabilityBuster <- function(
 				}
 
 				return( result )
-			}
+			},
+
+			log.pdf 	= multi.pdf
 		)
 	)
 
 
 
-	get.multinomial.configurations 	<- function( 
+	get.multi.configurations 	<- function( 
 		maxNo,
-		percent 			= .99,
-		chemicalCompound,
 		... 
 	){	
-		multinomial.buster <- multi$new( maxNo, percent, chemicalCompound ) 	
+		multinomial.buster <- multi$new( maxNo, aC, M ) 	
 
 		return( multinomial.buster$get.most.prob() )
 	}
@@ -276,15 +293,13 @@ get.probabilityBuster <- function(
 
 			initialize 	= function( 
 				maxNo,
+				aC,
 				percent = .99,
-				chemicalCompound = NULL,
 				... 
 			){
-				if( !is.null(chemicalCompound) ){
-					callSuper( maxNo, percent, chemicalCompound, ... )
+				callSuper( maxNo, aC, percent, ... )
 
-					directions 	<<- Directions$binom
-				}
+				directions 	<<- Directions$binom
 			},
 
 
@@ -317,21 +332,28 @@ get.probabilityBuster <- function(
 				names( res ) <- c('O', 'S') 
 
 				return( res )
-			}
+			},
+
+			log.pdf 	= binom.pdf
 		)
 	)
 
 
-	get.binomial.configurations 	<- function( 
+	get.binom.configurations 	<- function( 
 		maxNo,
 		percent 	= .99,
-		chemicalCompound,
 		... 
 	){	
-		binomial.buster <- binom$new( maxNo, percent, chemicalCompound ) 	
+		binomial.buster <- binom$new( maxNo, aC, B  ) 	
 
 		return( binomial.buster$get.most.prob() )
 	}
 
+	return(list(
+		binom = get.binom.configurations,
+		multi = get.multi.configurations
+	))
 }
+
+
 
